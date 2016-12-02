@@ -8,7 +8,7 @@ import Keyboard
 -- MODEL
 
 type alias Model =
-    { buffer: String
+    { buffer: String -- TODO: Array of Strings
     }
 
 
@@ -27,8 +27,23 @@ update msg model =
     case msg of
         Presses code ->
             case code of
-                13 -> ({ model | buffer = ""}, Cmd.none)
-                _ -> ({ model | buffer = String.append model.buffer (String.fromChar (fromCode code)) }, Cmd.none)
+                -- Enter
+                13 ->
+                    let
+                        newBuffer = String.append model.buffer "\n"
+                    in
+                        ({ model | buffer = newBuffer }, Cmd.none)
+
+                -- Other Chars
+                _ ->
+                    let
+                        newBuffer =
+                            code
+                            |> fromCode
+                            |> String.fromChar
+                            |> String.append model.buffer
+                    in
+                        ({ model | buffer = newBuffer }, Cmd.none)
 
 
 -- SUBSCRIPTIONS
@@ -42,7 +57,7 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    div []
+    main_ []
         [ text model.buffer ]
 
 
