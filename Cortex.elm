@@ -8,18 +8,33 @@ import Keyboard
 -- MODEL
 
 type alias Model =
-    { buffer: String -- TODO: Array of Strings
+    { buffer: List String
+    , currentLine: Int
     }
 
 
 init : (Model, Cmd Msg)
 init =
-    ({ buffer = "" }, Cmd.none)
+    ({ buffer = [ "" ], currentLine = 0 }, Cmd.none)
 
 
 -- UPDATE
 
 type Msg = Presses Char.KeyCode
+
+
+insertAtLine : Int -> Int -> String -> List String -> List String
+insertAtLine targetLine i newString list =
+    if targetLine == i then
+       case list of
+           [] -> []
+           [x] -> [(String.append x newString)]
+           (x::xs) -> (String.append x newString) :: (insertAtLine targetLine (i+1) newString xs)
+    else
+       case list of
+           [] -> []
+           [x] -> [x]
+           (x::xs) -> x :: (insertAtLine targetLine (i+1) newString xs)
 
 
 update: Msg -> Model -> (Model, Cmd Msg)
@@ -30,18 +45,14 @@ update msg model =
                 -- Enter
                 13 ->
                     let
-                        newBuffer = String.append model.buffer "\n"
+                        newBuffer = List.concat [model.buffer, [ "" ]]
                     in
-                        ({ model | buffer = newBuffer }, Cmd.none)
+                        ({ model | buffer = newBuffer, currentLine = model.currentLine + 1 }, Cmd.none)
 
                 -- Other Chars
                 _ ->
                     let
-                        newBuffer =
-                            code
-                            |> fromCode
-                            |> String.fromChar
-                            |> String.append model.buffer
+                        newBuffer = insertAtLine model.currentLine 0 (String.fromChar (fromCode code)) model.buffer
                     in
                         ({ model | buffer = newBuffer }, Cmd.none)
 
@@ -57,8 +68,10 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    main_ []
-        [ text model.buffer ]
+    div []
+    [ main_ [] (List.map (\line -> div [] [text line]) model.buffer)
+    , aside [] [ text (toString model) ]
+    ]
 
 
 -- MAIN

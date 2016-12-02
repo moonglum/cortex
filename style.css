@@ -5,3 +5,8 @@ body {
 main {
   margin: 0 20%;
 }
+
+aside {
+  margin-top: 5em;
+  background: silver;
+}
