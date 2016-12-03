@@ -9,20 +9,18 @@ import Keyboard
 
 type alias Model =
     { buffer: List String -- Maybe (List List Char) ?
-    , currentLine: Int
+    , cursorPosition: CursorPosition
     }
 
 
--- TODO:
--- type alias CursorPosition =
---     { x: Int
---     , y: Int
---     }
+type alias CursorPosition =
+    { y: Int
+    }
 
 
 init : (Model, Cmd Msg)
 init =
-    ({ buffer = [ "" ], currentLine = 0 }, Cmd.none)
+    ({ buffer = [ "" ], cursorPosition = { y = 0 } }, Cmd.none)
 
 
 -- UPDATE
@@ -49,13 +47,13 @@ insertNewline model =
     let
         newBuffer = List.concat [model.buffer, [ "" ]]
     in
-        { model | buffer = newBuffer, currentLine = model.currentLine + 1 }
+        { model | buffer = newBuffer, cursorPosition = { y = model.cursorPosition.y + 1 } }
 
 
 insertChar : Char -> Model -> Model
 insertChar char model =
     let
-        newBuffer = insertAtLine model.currentLine 0 (String.fromChar char) model.buffer
+        newBuffer = insertAtLine model.cursorPosition.y 0 (String.fromChar char) model.buffer
     in
         { model | buffer = newBuffer }
 
