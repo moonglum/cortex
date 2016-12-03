@@ -8,9 +8,16 @@ import Keyboard
 -- MODEL
 
 type alias Model =
-    { buffer: List String
+    { buffer: List String -- Maybe (List List Char) ?
     , currentLine: Int
     }
+
+
+-- TODO:
+-- type alias CursorPosition =
+--     { x: Int
+--     , y: Int
+--     }
 
 
 init : (Model, Cmd Msg)
@@ -37,24 +44,32 @@ insertAtLine targetLine i newString list =
            (x::xs) -> x :: (insertAtLine targetLine (i+1) newString xs)
 
 
+insertNewline : Model -> Model
+insertNewline model =
+    let
+        newBuffer = List.concat [model.buffer, [ "" ]]
+    in
+        { model | buffer = newBuffer, currentLine = model.currentLine + 1 }
+
+
+insertChar : Char -> Model -> Model
+insertChar char model =
+    let
+        newBuffer = insertAtLine model.currentLine 0 (String.fromChar char) model.buffer
+    in
+        { model | buffer = newBuffer }
+
+
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
         Presses code ->
             case code of
                 -- Enter
-                13 ->
-                    let
-                        newBuffer = List.concat [model.buffer, [ "" ]]
-                    in
-                        ({ model | buffer = newBuffer, currentLine = model.currentLine + 1 }, Cmd.none)
+                13 -> (insertNewline model, Cmd.none)
 
                 -- Other Chars
-                _ ->
-                    let
-                        newBuffer = insertAtLine model.currentLine 0 (String.fromChar (fromCode code)) model.buffer
-                    in
-                        ({ model | buffer = newBuffer }, Cmd.none)
+                _ -> (insertChar (fromCode code) model, Cmd.none)
 
 
 -- SUBSCRIPTIONS

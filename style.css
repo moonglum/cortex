@@ -1,9 +1,10 @@
 body {
-  font-family: "Fira Mono";
+  font-family: "Fira Mono", monospace;
 }
 
 main {
-  margin: 0 20%;
+  width: 80em;
+  margin: 0 auto;
 }
 
 aside {
