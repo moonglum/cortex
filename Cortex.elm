@@ -1,6 +1,7 @@
 module Cortex exposing (..)
 
 import Html exposing (..)
+import Html.Attributes exposing (..)
 import Char exposing (fromCode)
 import Keyboard
 
@@ -102,20 +103,52 @@ subscriptions model =
 -- VIEW
 
 
-displayBuffer : List String -> List (Html msg)
-displayBuffer buffer =
+displayBufferChar : Bool -> Char -> Html msg
+displayBufferChar active char =
+    span [ classList [ ( "active", active ), ( "char", True ) ] ] [ text (String.fromChar char) ]
+
+
+displayBufferChars : CursorPosition -> Int -> Int -> List Char -> List (Html msg)
+displayBufferChars cursorPosition i j chars =
     let
-        displayBufferLine line =
-            div []
-                [ text line ]
+        activeChar i j =
+            (i == cursorPosition.y) && (j == cursorPosition.x)
     in
-        List.map displayBufferLine buffer
+        case chars of
+            [] ->
+                [ (displayBufferChar (activeChar i j) ' ') ]
+
+            x :: xs ->
+                (displayBufferChar (activeChar i j) x) :: (displayBufferChars cursorPosition i (j + 1) xs)
+
+
+displayBufferLine : CursorPosition -> Int -> String -> Html msg
+displayBufferLine cursorPosition i line =
+    div [ class "line" ] (displayBufferChars cursorPosition i 0 (String.toList line))
+
+
+displayBufferLines : CursorPosition -> Int -> List String -> List (Html msg)
+displayBufferLines cursorPosition i lines =
+    case lines of
+        [] ->
+            []
+
+        [ x ] ->
+            [ displayBufferLine cursorPosition i x ]
+
+        x :: xs ->
+            (displayBufferLine cursorPosition i x) :: (displayBufferLines cursorPosition (i + 1) xs)
+
+
+displayBuffer : Model -> List (Html msg)
+displayBuffer model =
+    displayBufferLines model.cursorPosition 0 model.buffer
 
 
 view : Model -> Html Msg
 view model =
     div []
-        [ main_ [] (displayBuffer model.buffer)
+        [ main_ [] (displayBuffer model)
         , aside [] [ text (toString model) ]
         ]
 
