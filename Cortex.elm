@@ -79,10 +79,20 @@ subscriptions model =
 
 -- VIEW
 
+displayBuffer : List String -> List (Html msg)
+displayBuffer buffer =
+    let
+        displayBufferLine line =
+            div []
+                [ text line ]
+    in
+        List.map displayBufferLine buffer
+
+
 view : Model -> Html Msg
 view model =
     div []
-    [ main_ [] (List.map (\line -> div [] [text line]) model.buffer)
+    [ main_ [] (displayBuffer model.buffer)
     , aside [] [ text (toString model) ]
     ]
 
