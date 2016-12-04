@@ -15,13 +15,14 @@ type alias Model =
 
 
 type alias CursorPosition =
-    { y : Int
+    { x : Int
+    , y : Int
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { buffer = [ "" ], cursorPosition = { y = 0 } }, Cmd.none )
+    ( { buffer = [ "" ], cursorPosition = { x = 0, y = 0 } }, Cmd.none )
 
 
 
@@ -62,7 +63,7 @@ insertNewline model =
         newBuffer =
             List.concat [ model.buffer, [ "" ] ]
     in
-        { model | buffer = newBuffer, cursorPosition = { y = model.cursorPosition.y + 1 } }
+        { model | buffer = newBuffer, cursorPosition = { x = 0, y = model.cursorPosition.y + 1 } }
 
 
 insertChar : Char -> Model -> Model
@@ -71,7 +72,7 @@ insertChar char model =
         newBuffer =
             insertAtLine model.cursorPosition.y 0 (String.fromChar char) model.buffer
     in
-        { model | buffer = newBuffer }
+        { model | buffer = newBuffer, cursorPosition = { x = model.cursorPosition.x + 1, y = model.cursorPosition.y } }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
