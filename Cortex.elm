@@ -35,27 +35,20 @@ type Msg
 
 
 insertAtLine : Int -> Int -> String -> List String -> List String
-insertAtLine targetLine i newString list =
-    if targetLine == i then
+insertAtLine targetLine y newString list =
+    let
+        helper line =
+            if targetLine == y then
+                String.append line newString
+            else
+                line
+    in
         case list of
             [] ->
                 []
 
-            [ x ] ->
-                [ (String.append x newString) ]
-
-            x :: xs ->
-                (String.append x newString) :: (insertAtLine targetLine (i + 1) newString xs)
-    else
-        case list of
-            [] ->
-                []
-
-            [ x ] ->
-                [ x ]
-
-            x :: xs ->
-                x :: (insertAtLine targetLine (i + 1) newString xs)
+            line :: xs ->
+                (helper line) :: (insertAtLine targetLine (y + 1) newString xs)
 
 
 insertNewline : Model -> Model
@@ -103,41 +96,38 @@ subscriptions model =
 -- VIEW
 
 
-displayBufferChar : Bool -> Char -> Html msg
-displayBufferChar active char =
-    span [ classList [ ( "active", active ), ( "char", True ) ] ] [ text (String.fromChar char) ]
-
-
-displayBufferChars : CursorPosition -> Int -> Int -> List Char -> List (Html msg)
-displayBufferChars cursorPosition i j chars =
+displayBufferChar : CursorPosition -> CursorPosition -> Char -> Html msg
+displayBufferChar cursorPosition currentPosition char =
     let
-        activeChar i j =
-            (i == cursorPosition.y) && (j == cursorPosition.x)
+        active =
+            (currentPosition.x == cursorPosition.x) && (currentPosition.y == cursorPosition.y)
     in
-        case chars of
-            [] ->
-                [ (displayBufferChar (activeChar i j) ' ') ]
+        span [ classList [ ( "active", active ), ( "char", True ) ] ] [ text (String.fromChar char) ]
 
-            x :: xs ->
-                (displayBufferChar (activeChar i j) x) :: (displayBufferChars cursorPosition i (j + 1) xs)
+
+displayBufferChars : CursorPosition -> CursorPosition -> List Char -> List (Html msg)
+displayBufferChars cursorPosition currentPosition chars =
+    case chars of
+        [] ->
+            [ (displayBufferChar cursorPosition currentPosition ' ') ]
+
+        x :: xs ->
+            (displayBufferChar cursorPosition currentPosition x) :: (displayBufferChars cursorPosition { currentPosition | x = (currentPosition.x + 1) } xs)
 
 
 displayBufferLine : CursorPosition -> Int -> String -> Html msg
-displayBufferLine cursorPosition i line =
-    div [ class "line" ] (displayBufferChars cursorPosition i 0 (String.toList line))
+displayBufferLine cursorPosition y line =
+    div [ class "line" ] (displayBufferChars cursorPosition { x = 0, y = y } (String.toList line))
 
 
 displayBufferLines : CursorPosition -> Int -> List String -> List (Html msg)
-displayBufferLines cursorPosition i lines =
+displayBufferLines cursorPosition y lines =
     case lines of
         [] ->
             []
 
-        [ x ] ->
-            [ displayBufferLine cursorPosition i x ]
-
-        x :: xs ->
-            (displayBufferLine cursorPosition i x) :: (displayBufferLines cursorPosition (i + 1) xs)
+        line :: xs ->
+            (displayBufferLine cursorPosition y line) :: (displayBufferLines cursorPosition (y + 1) xs)
 
 
 displayBuffer : Model -> List (Html msg)
