@@ -54,15 +54,25 @@ insertAtLine targetLine y newString list =
                 (helper line) :: (insertAtLine targetLine (y + 1) newString xs)
 
 
+sliceUntil : Int -> Array.Array a -> Array.Array a
+sliceUntil =
+    Array.slice 0
 
--- TODO: Should also work for other char positions than the last one
+
+sliceFrom : Int -> Array.Array a -> Array.Array a
+sliceFrom from arr =
+    Array.slice from (Array.length arr) arr
 
 
 insertNewline : Model -> Model
 insertNewline model =
     let
+        slicePosition =
+            model.cursorPosition.y + 1
+
+        -- TODO: This is still a little confusing...
         newBuffer =
-            Array.append model.buffer (Array.fromList [ "" ])
+            Array.append (Array.push "" (sliceUntil slicePosition model.buffer)) (sliceFrom slicePosition model.buffer)
     in
         { model | buffer = newBuffer, cursorPosition = { x = 0, y = model.cursorPosition.y + 1 } }
 
