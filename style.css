@@ -1,21 +1,25 @@
 body {
   font-family: "Fira Mono", monospace;
   background: #eee;
+  color: #222;
   line-height: 1.5;
 }
 
-main {
+main,
+.line,
+.char {
   display: flex;
+}
+
+main {
   flex-direction: column;
   overflow: hidden;
   width: 80ch;
   margin: 3em auto;
-  color: #222;
 }
 
 .line {
-  display: flex;
-  height: 1.5em; /* This allows us to have empty lines */
+  height: 1.5em;
 }
 
 .char {
