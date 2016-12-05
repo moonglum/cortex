@@ -5,13 +5,14 @@ import Html.Attributes exposing (..)
 import Char exposing (fromCode)
 import Keyboard
 import Regex
+import Array
 
 
 -- MODEL
 
 
 type alias Model =
-    { buffer : List String
+    { buffer : Array.Array String
     , cursorPosition : CursorPosition
     , shift : Bool
     }
@@ -25,7 +26,7 @@ type alias CursorPosition =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { buffer = [ "" ], cursorPosition = { x = 0, y = 0 }, shift = False }, Cmd.none )
+    ( { buffer = Array.fromList [ "" ], cursorPosition = { x = 0, y = 0 }, shift = False }, Cmd.none )
 
 
 
@@ -61,7 +62,7 @@ insertNewline : Model -> Model
 insertNewline model =
     let
         newBuffer =
-            List.concat [ model.buffer, [ "" ] ]
+            Array.append model.buffer (Array.fromList [ "" ])
     in
         { model | buffer = newBuffer, cursorPosition = { x = 0, y = model.cursorPosition.y + 1 } }
 
@@ -80,20 +81,25 @@ insertChar char model =
                 String.fromChar (Char.toLower char)
 
         newBuffer =
-            insertAtLine model.cursorPosition.y 0 converted model.buffer
+            insertAtLine model.cursorPosition.y 0 converted (Array.toList model.buffer)
     in
-        { model | buffer = newBuffer, cursorPosition = { x = model.cursorPosition.x + 1, y = model.cursorPosition.y }, shift = False }
+        { model | buffer = (Array.fromList newBuffer), cursorPosition = { x = model.cursorPosition.x + 1, y = model.cursorPosition.y }, shift = False }
 
 
 moveCursor : CursorPosition -> Model -> Model
 moveCursor cursorPositionChange model =
     let
-        x =
-            -- TODO: Replace 80 with the current line length
-            model.cursorPosition.x + cursorPositionChange.x |> clamp 0 80
-
         y =
-            model.cursorPosition.y + cursorPositionChange.y |> clamp 0 ((List.length model.buffer) - 1)
+            model.cursorPosition.y + cursorPositionChange.y |> clamp 0 ((Array.length model.buffer) - 1)
+
+        lineLength =
+            case (Array.get y model.buffer) of
+                Just foo -> (String.length foo)
+                Nothing -> 0
+
+        x =
+            model.cursorPosition.x + cursorPositionChange.x |> clamp 0 lineLength
+
     in
         { model | cursorPosition = { x = x, y = y } }
 
@@ -117,6 +123,7 @@ update msg model =
                 13 ->
                     ( insertNewline model, Cmd.none )
 
+                -- Shift
                 16 ->
                     ( shift model, Cmd.none )
 
@@ -196,7 +203,7 @@ displayBufferLines cursorPosition y lines =
 
 displayBuffer : Model -> List (Html msg)
 displayBuffer model =
-    displayBufferLines model.cursorPosition 0 model.buffer
+    displayBufferLines model.cursorPosition 0 (Array.toList model.buffer)
 
 
 view : Model -> Html Msg
