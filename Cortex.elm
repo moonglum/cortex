@@ -94,12 +94,14 @@ moveCursor cursorPositionChange model =
 
         lineLength =
             case (Array.get y model.buffer) of
-                Just foo -> (String.length foo)
-                Nothing -> 0
+                Just foo ->
+                    (String.length foo)
+
+                Nothing ->
+                    0
 
         x =
             model.cursorPosition.x + cursorPositionChange.x |> clamp 0 lineLength
-
     in
         { model | cursorPosition = { x = x, y = y } }
 
@@ -191,19 +193,10 @@ displayBufferLine cursorPosition y line =
     div [ class "line" ] (displayBufferChars cursorPosition { x = 0, y = y } (String.toList line))
 
 
-displayBufferLines : CursorPosition -> Int -> List String -> List (Html msg)
-displayBufferLines cursorPosition y lines =
-    case lines of
-        [] ->
-            []
-
-        line :: xs ->
-            (displayBufferLine cursorPosition y line) :: (displayBufferLines cursorPosition (y + 1) xs)
-
-
 displayBuffer : Model -> List (Html msg)
 displayBuffer model =
-    displayBufferLines model.cursorPosition 0 (Array.toList model.buffer)
+    Array.indexedMap (displayBufferLine model.cursorPosition) model.buffer
+        |> Array.toList
 
 
 view : Model -> Html Msg
