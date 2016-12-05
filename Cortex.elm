@@ -4,6 +4,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Char exposing (fromCode)
 import Keyboard
+import Regex
 
 
 -- MODEL
@@ -12,6 +13,7 @@ import Keyboard
 type alias Model =
     { buffer : List String
     , cursorPosition : CursorPosition
+    , shift : Bool
     }
 
 
@@ -23,7 +25,7 @@ type alias CursorPosition =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { buffer = [ "" ], cursorPosition = { x = 0, y = 0 } }, Cmd.none )
+    ( { buffer = [ "" ], cursorPosition = { x = 0, y = 0 }, shift = False }, Cmd.none )
 
 
 
@@ -51,6 +53,7 @@ insertAtLine targetLine y newString list =
                 (helper line) :: (insertAtLine targetLine (y + 1) newString xs)
 
 
+-- TODO: Should also work for other char positions than the last one
 insertNewline : Model -> Model
 insertNewline model =
     let
@@ -60,13 +63,36 @@ insertNewline model =
         { model | buffer = newBuffer, cursorPosition = { x = 0, y = model.cursorPosition.y + 1 } }
 
 
+-- TODO: Should also work for other char positions than the last one
 insertChar : Char -> Model -> Model
 insertChar char model =
     let
+        converted =
+            if model.shift then
+                String.fromChar (Char.toUpper char)
+            else
+                String.fromChar (Char.toLower char)
+
         newBuffer =
-            insertAtLine model.cursorPosition.y 0 (String.fromChar char) model.buffer
+            insertAtLine model.cursorPosition.y 0 converted model.buffer
     in
-        { model | buffer = newBuffer, cursorPosition = { x = model.cursorPosition.x + 1, y = model.cursorPosition.y } }
+        { model | buffer = newBuffer, cursorPosition = { x = model.cursorPosition.x + 1, y = model.cursorPosition.y }, shift = False }
+
+
+-- TODO: Clamp (http://package.elm-lang.org/packages/elm-lang/core/5.0.0/Basics#clamp)
+moveCursor : CursorPosition -> Model -> Model
+moveCursor cursorPositionChange model =
+    { model | cursorPosition = { x = model.cursorPosition.x + cursorPositionChange.x, y = model.cursorPosition.y + cursorPositionChange.y } }
+
+
+shift : Model -> Model
+shift model =
+    { model | shift = True }
+
+
+shouldBeInserted : Char.KeyCode -> Bool
+shouldBeInserted x =
+    x |> fromCode |> String.fromChar |> (Regex.contains (Regex.regex "^[A-Za-z0-9 ]$"))
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -78,9 +104,31 @@ update msg model =
                 13 ->
                     ( insertNewline model, Cmd.none )
 
+                16 ->
+                    ( shift model, Cmd.none )
+
+                -- Left
+                37 ->
+                    ( moveCursor { x = -1, y = 0 } model, Cmd.none )
+
+                -- Up
+                38 ->
+                    ( moveCursor { x = 0, y = -1 } model, Cmd.none )
+
+                -- Right
+                39 ->
+                    ( moveCursor { x = 1, y = 0 } model, Cmd.none )
+
+                -- Down
+                40 ->
+                    ( moveCursor { x = 0, y = 1 } model, Cmd.none )
+
                 -- Other Chars
                 _ ->
-                    ( insertChar (fromCode code) model, Cmd.none )
+                    if shouldBeInserted code then
+                        ( insertChar (fromCode code) model, Cmd.none )
+                    else
+                        ( model, Cmd.none )
 
 
 
@@ -89,7 +137,10 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Keyboard.presses (\code -> Presses code)
+    -- Keyboard.presses does what I want, but does not work with arrows... and does not work in Firefox oO
+    -- This results in the weird 'handle shift yourself' thing, which of course does not work outside of the
+    -- standard chars...
+    Keyboard.downs (\code -> Presses code)
 
 
 
