@@ -53,7 +53,10 @@ insertAtLine targetLine y newString list =
                 (helper line) :: (insertAtLine targetLine (y + 1) newString xs)
 
 
+
 -- TODO: Should also work for other char positions than the last one
+
+
 insertNewline : Model -> Model
 insertNewline model =
     let
@@ -63,7 +66,10 @@ insertNewline model =
         { model | buffer = newBuffer, cursorPosition = { x = 0, y = model.cursorPosition.y + 1 } }
 
 
+
 -- TODO: Should also work for other char positions than the last one
+
+
 insertChar : Char -> Model -> Model
 insertChar char model =
     let
@@ -79,10 +85,17 @@ insertChar char model =
         { model | buffer = newBuffer, cursorPosition = { x = model.cursorPosition.x + 1, y = model.cursorPosition.y }, shift = False }
 
 
--- TODO: Clamp (http://package.elm-lang.org/packages/elm-lang/core/5.0.0/Basics#clamp)
 moveCursor : CursorPosition -> Model -> Model
 moveCursor cursorPositionChange model =
-    { model | cursorPosition = { x = model.cursorPosition.x + cursorPositionChange.x, y = model.cursorPosition.y + cursorPositionChange.y } }
+    let
+        x =
+            -- TODO: Replace 80 with the current line length
+            model.cursorPosition.x + cursorPositionChange.x |> clamp 0 80
+
+        y =
+            model.cursorPosition.y + cursorPositionChange.y |> clamp 0 ((List.length model.buffer) - 1)
+    in
+        { model | cursorPosition = { x = x, y = y } }
 
 
 shift : Model -> Model
